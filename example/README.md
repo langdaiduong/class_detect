@@ -3,7 +3,7 @@
 ## Install 
 
 ```
-flutter packages get
+flutter pub get
 ```
 
 ## Run
