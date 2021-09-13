@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
+//import 'dart:math';
+//import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image/image.dart' as img;
+//import 'package:image/image.dart' as img;
 
 import 'package:tflite/tflite.dart';
 import 'package:image_picker/image_picker.dart';
@@ -33,6 +33,7 @@ class _MyAppState extends State<MyApp> {
   double _imageHeight;
   double _imageWidth;
   bool _busy = false;
+  var detected;
 
   Future predictImagePicker() async {
     final ImagePicker picker  = ImagePicker(); 
@@ -93,68 +94,6 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  Uint8List imageToByteListFloat32(
-    img.Image image, int inputSize, double mean, double std) {
-    var convertedBytes = Float32List(1 * inputSize * inputSize * 3);
-    var buffer = Float32List.view(convertedBytes.buffer);
-    int pixelIndex = 0;
-    for (var i = 0; i < inputSize; i++) {
-      for (var j = 0; j < inputSize; j++) {
-        var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = (img.getRed(pixel) - mean) / std;
-        buffer[pixelIndex++] = (img.getGreen(pixel) - mean) / std;
-        buffer[pixelIndex++] = (img.getBlue(pixel) - mean) / std;
-      }
-    }
-    return convertedBytes.buffer.asUint8List();
-  }
-
-  Uint8List imageToByteListUint8(img.Image image, int inputSize) {
-    var convertedBytes = Uint8List(1 * inputSize * inputSize * 3);
-    var buffer = Uint8List.view(convertedBytes.buffer);
-    int pixelIndex = 0;
-    for (var i = 0; i < inputSize; i++) {
-      for (var j = 0; j < inputSize; j++) {
-        var pixel = image.getPixel(j, i);
-        buffer[pixelIndex++] = img.getRed(pixel);
-        buffer[pixelIndex++] = img.getGreen(pixel);
-        buffer[pixelIndex++] = img.getBlue(pixel);
-      }
-    }
-    return convertedBytes.buffer.asUint8List();
-  }
-  Future recognizeImage(File image) async {
-    int startTime = new DateTime.now().millisecondsSinceEpoch;
-    var recognitions = await Tflite.runModelOnImage(
-      path: image.path,
-      numResults: 6,
-      threshold: 0.05,
-      imageMean: 127.5,
-      imageStd: 127.5,
-    );
-    setState(() {
-      _recognitions = recognitions;
-    });
-    int endTime = new DateTime.now().millisecondsSinceEpoch;
-    print("Inference took ${endTime - startTime}ms");
-  }
-
-  Future recognizeImageBinary(File image) async {
-    int startTime = new DateTime.now().millisecondsSinceEpoch;
-    var imageBytes = (await rootBundle.load(image.path)).buffer;
-    img.Image oriImage = img.decodeJpg(imageBytes.asUint8List());
-    img.Image resizedImage = img.copyResize(oriImage, height: 224, width: 224);
-    var recognitions = await Tflite.runModelOnBinary(
-      binary: imageToByteListFloat32(resizedImage, 224, 127.5, 127.5),
-      numResults: 6,
-      threshold: 0.05,
-    );
-    setState(() {
-      _recognitions = recognitions;
-    });
-    int endTime = new DateTime.now().millisecondsSinceEpoch;
-    print("Inference took ${endTime - startTime}ms");
-  }
   Future ssdMobileNet(File image) async {
     int startTime = new DateTime.now().millisecondsSinceEpoch;
     var recognitions = await Tflite.detectObjectOnImage(
@@ -174,22 +113,21 @@ class _MyAppState extends State<MyApp> {
     int endTime = new DateTime.now().millisecondsSinceEpoch;
     print("Inference took ${endTime - startTime}ms");
   }
-  onSelect(model) async {
-    setState(() {
-      _busy = true;
-      _model = model;
-      _recognitions = null;
-    });
-    await loadModel();
+  // onSelect(model) async {
+  //   setState(() {
+  //     _busy = true;
+  //     _model = model;
+  //     _recognitions = null;
+  //   });
+  //   await loadModel();
 
-    if (_image != null)
-      predictImage(_image);
-    else
-      setState(() {
-        _busy = false;
-      });
-  }
-  var detected =[];
+  //   if (_image != null)
+  //     predictImage(_image);
+  //   else
+  //     setState(() {
+  //       _busy = false;
+  //     });
+  // }
   List<Widget> renderBoxes(Size screen) {
     if (_recognitions == null) return [];
     if (_imageHeight == null || _imageWidth == null) return [];
@@ -223,40 +161,6 @@ class _MyAppState extends State<MyApp> {
       );
     }).toList();
   }
-
-  List<Widget> renderKeypoints(Size screen) {
-    if (_recognitions == null) return [];
-    if (_imageHeight == null || _imageWidth == null) return [];
-
-    double factorX = screen.width;
-    double factorY = _imageHeight / _imageWidth * screen.width;
-
-    var lists = <Widget>[];
-    _recognitions.forEach((re) {
-      var color = Color((Random().nextDouble() * 0xFFFFFF).toInt() << 0)
-          .withOpacity(1.0);
-      var list = re["keypoints"].values.map<Widget>((k) {
-        return Positioned(
-          left: k["x"] * factorX - 6,
-          top: k["y"] * factorY - 6,
-          width: 100,
-          height: 12,
-          child: Text(
-            "● ${k["part"]}",
-            style: TextStyle(
-              color: color,
-              fontSize: 12.0,
-            ),
-          ),
-        );
-      }).toList();
-
-      lists..addAll(list);
-    });
-
-    return lists;
-  }
-
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -285,8 +189,11 @@ class _MyAppState extends State<MyApp> {
       ));
     }
     if (_model == ssd ) {
+      detected=[];
       stackChildren.addAll(renderBoxes(size));
-      print(detected);
+      if (detected!=[]){
+        print(detected);
+      }
     }
     if (_busy) {
       stackChildren.add(const Opacity(
@@ -298,20 +205,6 @@ class _MyAppState extends State<MyApp> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('tflite example app'),
-        actions: <Widget>[
-          PopupMenuButton<String>(
-            onSelected: onSelect,
-            itemBuilder: (context) {
-              List<PopupMenuEntry<String>> menuEntries = [
-                const PopupMenuItem<String>(
-                  child: Text(ssd),
-                  value: ssd,
-                ),
-              ];
-              return menuEntries;
-            },
-          )
-        ],
       ),
       body: Stack(
         children: stackChildren,
