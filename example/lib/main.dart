@@ -11,7 +11,7 @@ import 'package:image_picker/image_picker.dart';
 
 void main() => runApp(new App());
 const String ssd = "SSD MobileNet";
-
+File val;
 class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,18 @@ class _MyAppState extends State<MyApp> {
   bool _busy = false;
   var detected;
 
-  Future predictImagePicker() async {
+  Future predictImagePickerCamera() async {
+    final ImagePicker picker  = ImagePicker(); 
+    //final image = await picker.getImage(source: ImageSource.gallery);
+    final image = await picker.getImage(source: ImageSource.camera);
+    if (image == null) return;
+    setState(() {
+      _image = File(image.path);
+      _busy = true;
+    });
+    predictImage(_image);
+  }
+    Future predictImagePicker() async {
     final ImagePicker picker  = ImagePicker(); 
     final image = await picker.getImage(source: ImageSource.gallery);
     if (image == null) return;
@@ -209,10 +220,26 @@ class _MyAppState extends State<MyApp> {
       body: Stack(
         children: stackChildren,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: predictImagePicker,
-        tooltip: 'Pick Image',
-        child: Icon(Icons.image),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: predictImagePicker,
+      //   tooltip: 'Pick Image',
+      //   child: Icon(Icons.image),
+      // ),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          FloatingActionButton(
+            heroTag: "Fltbtn2",
+            child: Icon(Icons.camera_alt),
+            onPressed: predictImagePickerCamera,
+          ),
+          SizedBox(width: 10,),
+          FloatingActionButton(
+            heroTag: "Fltbtn1",
+            child: Icon(Icons.photo),
+            onPressed: predictImagePicker,
+          ),
+        ],
       ),
     );
   }

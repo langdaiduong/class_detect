@@ -20,6 +20,12 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
   image: ^3.0.2
+  camera:
+  camera_camera: 
+  path_provider:
+  path:
+  http:
+  dio:
 
 dev_dependencies:
   flutter_test:
@@ -31,6 +37,9 @@ dev_dependencies:
     path: ../
 
   test: ^1.12.0
+  # camera:
+  # path_provider:
+  # path:
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec
 
